@@ -80,7 +80,7 @@ case "${1:-}" in
                       --height=4 \
                       --layout=reverse)
         if [[ "$res" == "Yes" ]]; then
-            rm -rf "$DIR/${2:-?}"
+            rm -rf -- "$DIR/${2:-?}"
         fi
         ;;
     --LIST)
@@ -91,11 +91,10 @@ case "${1:-}" in
 
         # Output: "mtime dirname"
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            stat -f "%m %N" ./* 2>/dev/null
+            stat -f "%m %N" -- * 2>/dev/null
         else
-            stat -c "%Y %n" ./* 2>/dev/null
+            stat -c "%Y %n" -- * 2>/dev/null
         fi | \
-            sed 's| \./| |' | \
             # Join on dirname, filling missing access times with 0
             join -1 2 -2 2 -a1 -e 0 -o 1.1,2.1,1.2 - "$logfile" | \
              awk -v now="$now" '{
@@ -147,18 +146,21 @@ case "${1:-}" in
     "https://"*)
         "$0" clone "${1:-}"
         ;;
+    --FZF)
+        fzf --ansi \
+            --no-select-1 \
+            --no-exit-0 \
+            --query="${2:-}" \
+            --preview "ls $DIR/{}" \
+            --print-query \
+            --bind "start,ctrl-r:reload($0 --LIST)" \
+            --bind "enter:accept-or-print-query" \
+            --bind "alt-backspace:become($0 --RM {1}; $0 --FZF)"\
+            --height '~50%' \
+            --header 'Type to filter/create | Enter=select | Alt-BS=delete'
+        ;;
     *)
-        result=$(fzf --ansi \
-                     --no-select-1 \
-                     --no-exit-0 \
-                     --query="${1:-}" \
-                     --preview "ls $DIR/{}" \
-                     --print-query \
-                     --bind "start,ctrl-r:reload($0 --LIST)" \
-                     --bind "enter:accept-or-print-query" \
-                     --bind "alt-backspace:become($0 --RM {1}; $0)"\
-                     --height '~50%' \
-                     --header 'Type to filter/create | Enter=select | Alt-BS=delete')
+        result=$("$0" --FZF "${1:-}")
 
         query=$(echo "$result" | head -1)
         selected=$(echo "$result" | tail -1)
