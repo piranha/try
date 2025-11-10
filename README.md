@@ -14,7 +14,15 @@ how to make it permanent.
 
 NOTE: there is no good way around that pesky `eval` since shell scripts are
 executed in subshells and so cannot change directory of your login
-shell. ¯\\_(ツ)_/¯
+shell. _¯\\\_(ツ)\_/¯_
+
+### Config
+
+`~/.tryrc`:
+
+```
+DIR=~/dev/tries # Directory to store experiments at
+```
 
 ## Features
 

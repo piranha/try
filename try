@@ -5,9 +5,11 @@ set -euo pipefail
 #set -x
 
 DIR=~/dev/tries
-test -f ~/.tryrc && . ~/.tryrc
+test -f ~/.tryrc && . ~/.tryrc # put DIR=... in there
 
 usage() {
+    SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
     cat <<EOF
 $(basename "$0"): Browse all experiments
 $(basename "$0") help: This usage info
@@ -16,7 +18,30 @@ $(basename "$0") worktree bla bla: Select an experiment to create a new repo
 
 Put this in your zsh/bash config:
 
-eval "\$(~/bin/try init)"
+eval "\$($SCRIPT init)"
+EOF
+}
+
+init() {
+    SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+
+    cat <<EOF
+try () {
+  local line
+  local tmpfile=\$(mktemp)
+
+  "$SCRIPT" "\$@" > "\$tmpfile"
+
+  while IFS= read -r line; do
+    if [[ "\$line" == DO:\ * ]]; then
+      eval "\${line#DO: }"
+    else
+      printf '%s\n' "\$line"
+    fi
+  done < "\$tmpfile"
+
+  rm -f "\$tmpfile"
+}
 EOF
 }
 
@@ -93,19 +118,7 @@ case "${1:-}" in
         usage
         ;;
     init)
-        SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
-
-        cat <<EOF
-try() {
-  local cmd
-  cmd=\$("$SCRIPT" "\$@" 2>/dev/tty)
-  if [[ $? -eq 0 ]]; then
-    eval "\$cmd"
-  else
-    printf %s "\$cmd"
-  fi
-}
-EOF
+        init
         ;;
     clone)
         if [[ -z "${2:-}" ]]; then
@@ -115,7 +128,7 @@ EOF
         reponame=$(basename "$2" | sed 's/[?#].*//' | sed 's/\.git$//')
         target="$("$0" --TARGET "$reponame")"
         git clone "$2" "$target"
-        echo cd "$target"
+        echo DO: cd "$target"
         ;;
     worktree) # worktree src [target]
         src=$(cd "${2:-.}" && pwd)
@@ -125,8 +138,8 @@ EOF
         fi
         target="$(echo "${3:-$(basename "$src")}" | sed 's/^[0-9]\{6\}-//')"
         target="$("$0" --TARGET "$target")"
-        (cd "$src" && git worktree add "$target" >&2)
-        echo cd "$target"
+        (cd "$src" && git worktree add "$target")
+        echo DO: cd "$target"
         ;;
     .)
       "$0" worktree "${2:-}"
@@ -164,7 +177,7 @@ EOF
 
         if [[ -n "$target" ]]; then
             record "$target"
-            echo cd "$target"
+            echo DO: cd "$target"
         fi
         ;;
 esac
