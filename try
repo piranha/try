@@ -4,8 +4,10 @@
 set -euo pipefail
 #set -x
 
-DIR=~/dev/tries
-test -f ~/.tryrc && . ~/.tryrc # put DIR=... in there
+DIR="${DIR:-~/dev/tries}"
+if [[ -z "${TRYRC_DISABLED:-}" ]] && [[ -f ~/.tryrc ]]; then
+    . ~/.tryrc
+fi
 
 usage() {
     SCRIPT="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
