@@ -149,7 +149,7 @@ case "${1:-}" in
     .)
       "$0" worktree "${2:-}"
       ;;
-    "https://"*)
+    "https://"*|"git@"*)
         "$0" clone "${1:-}"
         ;;
     --FZF)
