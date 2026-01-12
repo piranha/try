@@ -1,0 +1,7 @@
+# Test artifacts
+tests/test_helper/bats-support/
+tests/test_helper/bats-assert/
+
+# Temporary test files
+*.tmp
+.trylog

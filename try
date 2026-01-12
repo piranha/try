@@ -93,11 +93,13 @@ case "${1:-}" in
 
         # Output: "mtime dirname"
         # Use nullglob to handle empty directories gracefully
-        shopt -s nullglob
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            stat -f "%m %N" -- * 2>/dev/null || true
-        else
-            stat -c "%Y %n" -- * 2>/dev/null || true
+        files=(*)
+        if [[ -e "${files[0]}" || -L "${files[0]}" ]]; then
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                stat -f "%m %N" -- "${files[@]}" 2>/dev/null
+            else
+                stat -c "%Y %n" -- "${files[@]}" 2>/dev/null
+            fi
         fi | \
             # Join on dirname (field 2), filling missing access times with 0
             join -1 2 -2 2 -a1 -e 0 -o 1.1,2.1,1.2 - "$logfile" | \
