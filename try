@@ -92,12 +92,14 @@ case "${1:-}" in
         now=$(date +%s)
 
         # Output: "mtime dirname"
+        # Use nullglob to handle empty directories gracefully
+        shopt -s nullglob
         if [[ "$OSTYPE" == "darwin"* ]]; then
-            stat -f "%m %N" -- * 2>/dev/null
+            stat -f "%m %N" -- * 2>/dev/null || true
         else
-            stat -c "%Y %n" -- * 2>/dev/null
+            stat -c "%Y %n" -- * 2>/dev/null || true
         fi | \
-            # Join on dirname, filling missing access times with 0
+            # Join on dirname (field 2), filling missing access times with 0
             join -1 2 -2 2 -a1 -e 0 -o 1.1,2.1,1.2 - "$logfile" | \
              awk -v now="$now" '{
                  mtime=$1
